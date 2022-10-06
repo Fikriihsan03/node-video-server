@@ -1,6 +1,6 @@
 const fs = require("fs");
 const streamMovie = (req, res) => {
-  const path = `movies/${req.params.name}.mp4`;
+  const path = "/" + req.query.path;
   const stat = fs.statSync(path);
   const fileSize = stat.size;
   const range = req.headers.range;

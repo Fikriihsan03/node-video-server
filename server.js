@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 var cors = require("cors");
+const drivelist = require("drivelist");
+
 const streamController = require("./controller/streamMovieController");
 
 const storage = multer.diskStorage({
@@ -21,11 +23,41 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs");
 
-app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname + "/index.html"));
+app.get("/", async function (req, res) {
+  const drives = await drivelist.list();
+
+  drives.forEach((drive) => {});
+  drives.shift();
+  res.render("index", {
+    title: "halo",
+    data: drives,
+  });
 });
+app.post("/generateMovie", function (req, res) {
+  const folder = [];
+  fs.readdirSync(`${req.body.path}/doctor`).forEach((file) => {
+    const path =
+      req.body.path.split("").slice(1).join("") + "/doctor" + "/" + file;
+    const title = file
+      .replace("-", " ")
+      .substring(0, file.length - 4)
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    let movieData = {
+      id:
+        new Date().getTime().toString(36) + Math.random().toString(36).slice(2),
+      title,
+      path,
+    };
+    folder.push(movieData);
+  });
+  fs.writeFileSync("movieData.json", JSON.stringify(folder));
 
+  res.send("success");
+});
 app.post("/uploadMovie", upload.single("file_movie"), function (req, res) {
   let rawdata = fs.readFileSync("movieData.json");
   let movies = JSON.parse(rawdata);
@@ -38,32 +70,27 @@ app.post("/uploadMovie", upload.single("file_movie"), function (req, res) {
   let data = JSON.stringify([...movies, movieData]);
   fs.writeFileSync("movieData.json", data);
 
-  // console.log(`y ${Date.now()}`);
   res.send("success");
-  // console.log(req.file, req.body);
 });
 
 app.get("/movie", function (req, res) {
   let rawdata = fs.readFileSync("movieData.json");
   let movies = JSON.parse(rawdata);
-  // console.log(req.query.title === "");
-  if (req.query.title === "") {
+  if (req.query.title === "" || req.query.title === undefined) {
     res.json(movies);
   } else {
     var result = movies.filter((o) => o.title.includes(req.query.title));
     res.json(result);
   }
-
-  // console.log(student);
 });
+
 app.get("/movie/:id", function (req, res) {
   let rawdata = fs.readFileSync("movieData.json");
   let movies = JSON.parse(rawdata);
   let specificMovie = movies.filter((movie) => movie.id === req.params.id);
-  // console.log(student);
   res.json(specificMovie);
 });
-app.get("/video/:name", (req, res) => {
+app.get("/video", (req, res) => {
   streamController.streamMovie(req, res);
 });
 

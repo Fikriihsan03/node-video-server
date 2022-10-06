@@ -1,0 +1,48 @@
+<html>
+
+<head>
+  <title>
+    <%= title %>
+  </title>
+</head>
+
+<body>
+  <div style="
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      ">
+    <h1>Form For Upload Movie</h1>
+    <form action="/uploadMovie" enctype="multipart/form-data" method="POST">
+      <label for="title">Title:</label><br />
+      <input type="text" id="title" name="title" /><br />
+      <input type="file" name="file_movie" />
+      <input type="submit" value="Submit" />
+    </form>
+    <h1>Generate from Flash-Disk</h1>
+    <ul>
+      <% for (item of data) { %>
+        <li>
+          <button onclick="generateData(<%= `"${item.mountpoints[0].path}"` %>)">
+            <%= item.description%>
+          </button>
+        </li>
+        <% }%>
+    </ul>
+  </div>
+  <script>
+    function generateData(path) {
+      fetch('/generateMovie', {
+        method: 'POST', // or 'PUT'
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({path}),
+      })
+    }
+  </script>
+</body>
+
+</html>
